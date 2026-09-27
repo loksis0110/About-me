@@ -211,6 +211,10 @@ em{font-style:normal;color:var(--accent-2)}
 .phone-fallback{display:none;position:absolute;left:50%;top:50%;width:min(300px,62vw);transform:translate(-50%,-50%);border-radius:40px;border:8px solid #1c1f28;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6)}
 .no-webgl .phone-fallback{display:block}
 .phone-hint{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px;white-space:nowrap;pointer-events:none}
+.fold-btn{position:absolute;left:50%;bottom:calc(6% + 34px);transform:translateX(-50%);display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-radius:99px;background:rgba(16,18,26,.75);border:1px solid var(--line-2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:14px;font-weight:500;z-index:3;transition:background .3s,color .3s,border-color .3s}
+.fold-btn:hover,.fold-btn.open{background:var(--text);color:#07080c;border-color:var(--text)}
+.fold-btn svg{transition:transform .6s var(--ease)}
+.fold-btn.open svg{transform:scaleX(-1)}
 .phone-count{position:absolute;right:4%;top:50%;transform:translateY(-50%);display:grid;gap:10px;pointer-events:none}
 .phone-count i{width:3px;height:22px;border-radius:3px;background:var(--line-2);transition:background .4s,height .4s var(--ease)}
 .phone-count i.on{background:var(--text);height:38px}
@@ -229,7 +233,8 @@ em{font-style:normal;color:var(--accent-2)}
 @media (max-width:860px){
   .case-stage{grid-template-columns:1fr;gap:0}
   .phone-wrap{grid-column:1;grid-row:1}
-  .steps{grid-column:1;grid-row:1;position:relative;z-index:2}
+  .steps{grid-column:1;grid-row:1;position:relative;z-index:2;pointer-events:none}
+  .step-card{pointer-events:auto}
   .step{min-height:100svh;align-items:flex-end}
   .step-card{position:sticky;bottom:calc(3svh + env(safe-area-inset-bottom,0px));opacity:1;background:rgba(12,14,20,.88);border-color:var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:20px 22px;margin-bottom:3svh;transition:opacity .45s,transform .6s var(--ease)}
   .step:not(.on) .step-card{opacity:0;transform:translateY(24px)}
@@ -237,6 +242,7 @@ em{font-style:normal;color:var(--accent-2)}
   .step p{font-size:15.5px;line-height:1.5}
   .phone-count{right:0;top:36%}
   .phone-hint{display:none}
+  .fold-btn{left:auto;right:0;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 74px);transform:none;height:40px;padding:0 14px;font-size:13px}
   .case-result{grid-template-columns:1fr}
   .case-result .under{border-left:0;padding-left:0;border-top:1px solid var(--line-2);padding-top:22px}
 }
@@ -317,10 +323,7 @@ em{font-style:normal;color:var(--accent-2)}
 .big-foot{font-family:var(--display);font-weight:800;font-size:23.5vw;line-height:.78;letter-spacing:-.05em;text-align:center;color:transparent;-webkit-text-stroke:1px rgba(214,220,255,.1);margin-top:clamp(50px,8vw,110px);white-space:nowrap;overflow:hidden;user-select:none}
 .big-foot span{display:inline-block}
 
-@media (prefers-reduced-motion:reduce){
-  .grain,.marquee-track,.a-bg::before,.contact-orb,.status i,.scroll-hint i::after,.drag-hint svg{animation:none!important}
-  .loader{display:none}
-}
+
 </style>
 </head>
 <body>
@@ -431,6 +434,7 @@ em{font-style:normal;color:var(--accent-2)}
           <div class="phone-canvas" id="phone-canvas" data-cursor="drag"></div>
           <div class="phone-fallback"><img id="phone-fallback-img" src="img/app-01-drinks.webp" alt="App screen" width="780" height="1688"></div>
           <div class="phone-count" id="phone-count" aria-hidden="true"></div>
+          <button type="button" class="fold-btn" id="fold-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="16" rx="2"/></svg><span data-i18n="case.unfold">Unfold</span></button>
           <div class="phone-hint"><svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 1L1 6l4 5M21 1l4 5-4 5M1 6h24"/></svg><span data-i18n="case.drag">Drag the phone</span></div>
         </div>
         <div class="steps" id="steps"></div>
@@ -590,7 +594,7 @@ en:{
 'f5.t':'Checklists','f5.d':'Opening and closing tasks with progress, sub-steps and a record of who ticked what.',
 'f6.t':'Announcements','f6.d':'News and reminders from management with read receipts, so it’s clear who has seen them.',
 'f7.t':'Supply orders','f7.d':'The team adds what’s running low, and every morning at 07:00 the list goes to the buyer in Telegram.',
-'case.drag':'Drag the phone','case.rtitle':'Result',
+'case.drag':'Drag to spin · tap to unfold','case.unfold':'Unfold','case.fold':'Fold','case.rtitle':'Result',
 'case.rtext':'Shift handover got simpler, nothing gets lost in chats, and routine tasks run on their own. The manager sees the whole bar from one screen.',
 'case.under':'Under the hood: roles and access rights, an action log, automatic archiving, offline mode and push notifications.',
 'case.note':'The bar’s name and logo are hidden. Screens show demo data.',
@@ -643,7 +647,7 @@ ru:{
 'f5.t':'Чек-листы','f5.d':'Задачи на открытие и закрытие с прогрессом, подпунктами и отметкой, кто что сделал.',
 'f6.t':'Объявления','f6.d':'Новости и напоминания от руководства с отметками о прочтении: видно, кто ознакомился.',
 'f7.t':'Заявки на закупку','f7.d':'Команда добавляет, что заканчивается, а каждое утро в 07:00 список уходит закупщику в Telegram.',
-'case.drag':'Покрутите телефон','case.rtitle':'Результат',
+'case.drag':'Крутите · нажмите, чтобы разложить','case.unfold':'Разложить','case.fold':'Сложить','case.rtitle':'Результат',
 'case.rtext':'Передавать смену стало проще, ничего не теряется в чатах, а рутина работает сама. Руководитель видит весь бар с одного экрана.',
 'case.under':'Под капотом: роли и права доступа, журнал действий, автоматическая архивация, работа без интернета и push-уведомления.',
 'case.note':'Название и логотип бара скрыты. На экранах демо-данные.',
@@ -696,7 +700,7 @@ sr:{
 'f5.t':'Ček-liste','f5.d':'Zadaci za otvaranje i zatvaranje sa napretkom, podkoracima i zapisom ko je šta štiklirao.',
 'f6.t':'Obaveštenja','f6.d':'Vesti i podsetnici od menadžmenta sa potvrdom čitanja, pa se vidi ko ih je video.',
 'f7.t':'Nabavka','f7.d':'Tim dodaje ono što nestaje, a svako jutro u 07:00 spisak stiže nabavljaču u Telegram.',
-'case.drag':'Zavrtite telefon','case.rtitle':'Rezultat',
+'case.drag':'Vrtite · dodirnite da rasklopite','case.unfold':'Rasklopi','case.fold':'Sklopi','case.rtitle':'Rezultat',
 'case.rtext':'Primopredaja smene je postala jednostavnija, ništa se ne gubi u četovima, a rutinski zadaci rade sami. Menadžer vidi ceo bar sa jednog ekrana.',
 'case.under':'Ispod haube: uloge i prava pristupa, dnevnik aktivnosti, automatsko arhiviranje, rad bez interneta i push obaveštenja.',
 'case.note':'Naziv i logo bara su sakriveni. Na ekranima su demo podaci.',
@@ -778,7 +782,7 @@ $('#copy-email').addEventListener('click',()=>{
 <script>
 /* ================= MOTION ================= */
 (function(){
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduce=false; // the page keeps its motion regardless of the OS animation setting
 const fine=matchMedia('(pointer: fine)').matches;
 const hasGsap=!!window.gsap;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -853,6 +857,8 @@ function setStep(i){
   if(window.__phone.onStep)window.__phone.onStep(i);
 }
 setStep(0);
+const stepIO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)setStep(+e.target.dataset.step)})},{rootMargin:'-40% 0px -40% 0px'});
+$$('.step').forEach(s=>stepIO.observe(s));
 
 if(!hasGsap){$('#loader').remove();return}
 
@@ -880,7 +886,6 @@ else{
 }
 function sessionSeen(){try{const s=sessionStorage.getItem('martin_seen');sessionStorage.setItem('martin_seen','1');return !!s}catch(e){return false}}
 
-if(reduce){ScrollTrigger.refresh();return}
 
 /* ---------- hero scroll ---------- */
 gsap.to('.hero-content',{yPercent:-18,opacity:.2,ease:'none',scrollTrigger:{trigger:'#hero',start:'top top',end:'bottom top',scrub:true}});
@@ -917,7 +922,6 @@ $$('.stat b').forEach(b=>{const n=+b.dataset.count,p=b.dataset.prefix||'';const 
   gsap.to(o,{v:n,duration:1.8,ease:'power3.out',scrollTrigger:{trigger:b,start:'top 90%',once:true},onUpdate(){b.textContent=p+Math.round(o.v)}})});
 
 /* case steps */
-$$('.step').forEach((s,i)=>ScrollTrigger.create({trigger:s,start:'top 60%',end:'bottom 60%',onToggle:self=>{if(self.isActive)setStep(i)}}));
 ScrollTrigger.create({trigger:'#case-stage',start:'top bottom',end:'bottom top',onUpdate:s=>{window.__phone.progress=s.progress}});
 
 /* gallery horizontal */
@@ -969,12 +973,12 @@ function visibleLoop(el,render){
   let on=false,raf=0;const tick=t=>{render(t);raf=requestAnimationFrame(tick)};
   new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting&&!on){on=true;raf=requestAnimationFrame(tick)}else if(!e.isIntersecting&&on){on=false;cancelAnimationFrame(raf)}})},{rootMargin:'100px'}).observe(el);
 }
-function dragger(el,onMove,onEnd){
-  let down=false,lx=0,ly=0,moved=false;
-  el.addEventListener('pointerdown',e=>{down=true;moved=false;lx=e.clientX;ly=e.clientY;try{el.setPointerCapture(e.pointerId)}catch(_){}});
+function dragger(el,onMove,onEnd,onTap){
+  let down=false,lx=0,ly=0,moved=false,sx=0,sy=0;
+  el.addEventListener('pointerdown',e=>{down=true;moved=false;lx=sx=e.clientX;ly=sy=e.clientY;try{el.setPointerCapture(e.pointerId)}catch(_){}});
   el.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
-    if(e.pointerType==='touch'&&!moved&&Math.abs(dy)>Math.abs(dx)){down=false;return}moved=true;onMove(dx,dy)});
-  const up=()=>{if(down){down=false;onEnd&&onEnd()}};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+    if(e.pointerType==='touch'&&!moved&&Math.abs(dy)>Math.abs(dx)){down=false;return}if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>6)moved=true;if(moved)onMove(dx,dy)});
+  const up=()=>{if(down){down=false;onEnd&&onEnd();if(!moved&&onTap)onTap()}};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
 }
 
 const NOISE=`
@@ -1069,7 +1073,7 @@ vec3 objectTangent=vec3(tangent.xyz);
   });
 }
 
-/* ---------- CASE: 3D phone ---------- */
+/* ---------- CASE: 3D foldable phone ---------- */
 function initPhone(){
   const host=document.getElementById('phone-canvas');
   const renderer=makeRenderer(host);renderer.toneMappingExposure=1.0;
@@ -1077,74 +1081,133 @@ function initPhone(){
   const camera=new THREE.PerspectiveCamera(28,1,.1,50);camera.position.set(0,0,5);
   const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(renderer),.04).texture;
   const key=new THREE.DirectionalLight(0xc3ceff,1.2);key.position.set(-3,2,4);scene.add(key);
+  const rim=new THREE.DirectionalLight(0xffc2a8,.8);rim.position.set(4,-1,-3);scene.add(rim);
 
-  const SW=.74,SH=SW*1688/780,W=SW+.06,H=SH+.06,D=.085;
-  const phone=new THREE.Group();const pivot=new THREE.Group();pivot.add(phone);scene.add(pivot);
-  const bodyMat=new THREE.MeshPhysicalMaterial({color:0x2a2e3a,metalness:.9,roughness:.32,clearcoat:1,clearcoatRoughness:.15});
-  phone.add(new THREE.Mesh(new RoundedBoxGeometry(W,H,D,10,.12),bodyMat));
-  // bezel (black glass front)
-  const glass=new THREE.Mesh(roundRect(W-.012,H-.012,.115),new THREE.MeshPhysicalMaterial({color:0x020204,metalness:0,roughness:.05,clearcoat:1}));glass.position.z=D/2+.0006;phone.add(glass);
-  // screen
+  const SW=.72,SH=SW*1688/780,W=SW+.06,H=SH+.07,T=.04,B=.006;
+  const pivot=new THREE.Group();scene.add(pivot);
+  const device=new THREE.Group();pivot.add(device);
+  const bodyMat=new THREE.MeshPhysicalMaterial({color:0x232838,metalness:.9,roughness:.3,clearcoat:1,clearcoatRoughness:.16});
+  const blackGlass=new THREE.MeshPhysicalMaterial({color:0x030305,metalness:0,roughness:.06,clearcoat:1});
+  function slab(){ // one half of the device, spine on the left edge, z from 0 to T
+    const g=new THREE.ExtrudeGeometry(cornerRect(W-2*B,H-2*B,.018,.105,'shape'),{depth:T-2*B,bevelEnabled:true,bevelThickness:B,bevelSize:B,bevelSegments:3,curveSegments:24});
+    g.translate(0,0,B);return g;
+  }
+  // back half (fixed)
+  const back=new THREE.Mesh(slab(),bodyMat);back.position.z=-T;device.add(back);
+  const backFace=new THREE.Mesh(cornerRect(W-.01,H-.01,.016,.1,true),blackGlass);backFace.position.z=.0004;device.add(backFace);
+  // hinge + front half (swings open like a book cover)
+  const hinge=new THREE.Group();hinge.position.set(-W/2,0,0);device.add(hinge);
+  const front=new THREE.Mesh(slab(),bodyMat);front.position.x=W/2;hinge.add(front);
+  const frontGlass=new THREE.Mesh(cornerRect(W-.012,H-.012,.1,.1,true),blackGlass);frontGlass.position.set(W/2,0,T+.0005);hinge.add(frontGlass);
+  const innerGlass=new THREE.Mesh(cornerRect(W-.01,H-.01,.016,.1,true),blackGlass);innerGlass.rotation.y=Math.PI;innerGlass.position.set(W/2,0,-.0004);hinge.add(innerGlass);
+  const spine=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,H-.12,20),new THREE.MeshPhysicalMaterial({color:0x151823,metalness:.9,roughness:.4}));spine.position.set(-W/2,0,0);device.add(spine);
+
+  // screens
   const loader=new THREE.TextureLoader();const maxAniso=renderer.capabilities.getMaxAnisotropy();
-  const tex=[];const blank=new THREE.DataTexture(new Uint8Array([12,14,20,255]),1,1);blank.needsUpdate=true;
-  const SU={tA:{value:blank},tB:{value:blank},uMix:{value:0},uTime:{value:0},uSheen:{value:0},uGlow:{value:new THREE.Color('#8ea2ff')}};
-  const screenMat=new THREE.ShaderMaterial({uniforms:SU,transparent:false,
-    vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader:`uniform sampler2D tA;uniform sampler2D tB;uniform float uMix;uniform float uSheen;uniform vec3 uGlow;varying vec2 vUv;
-    void main(){float d=vUv.y*.82+vUv.x*.18;float p=1.-uMix*1.25+.05;float m=smoothstep(p-.06,p+.06,d);
-      vec3 a=texture2D(tA,vUv).rgb;vec3 b=texture2D(tB,vec2(vUv.x,vUv.y+(1.-m)*.02)).rgb;vec3 col=mix(a,b,m);
-      float line=exp(-pow((d-p)/.018,2.))*step(.001,uMix)*step(uMix,.999);col+=uGlow*line*.9;
-      float sh=smoothstep(.0,.35,1.-abs(vUv.x+vUv.y*.6-uSheen))*0.05;col+=vec3(sh);
-      gl_FragColor=vec4(col,1.);
-    }`});
-  const screenGeo=roundRect(SW,SH,.085);const screen=new THREE.Mesh(screenGeo,screenMat);screen.position.z=D/2+.0014;phone.add(screen);
-  // camera island
-  const island=new THREE.Mesh(roundRect(.2,.058,.029),new THREE.MeshBasicMaterial({color:0x000000}));island.position.set(0,SH/2-.035,D/2+.0022);phone.add(island);
-  // side buttons
-  const btnMat=new THREE.MeshPhysicalMaterial({color:0x3a3f4d,metalness:.9,roughness:.3});
-  [[W/2+.004,.35,.16],[-W/2-.004,.42,.09],[-W/2-.004,.25,.16]].forEach(([x,y,h])=>{const b=new THREE.Mesh(new RoundedBoxGeometry(.014,h,.034,4,.006),btnMat);b.position.set(x,y,0);phone.add(b)});
-  // back: camera bump + lenses + mark
-  const bump=new THREE.Mesh(new RoundedBoxGeometry(.34,.34,.03,6,.08),new THREE.MeshPhysicalMaterial({color:0x353a48,metalness:.9,roughness:.25,clearcoat:1}));bump.position.set(-W/2+.23,H/2-.23,-D/2-.012);phone.add(bump);
+  const tex=SHOTS.map(src=>{const t=loader.load(src,x=>{x.anisotropy=maxAniso;x.needsUpdate=true});t.colorSpace=THREE.NoColorSpace;t.anisotropy=maxAniso;return t});
+  function screenMat(crease){
+    const u={tA:{value:tex[0]},tB:{value:tex[0]},uMix:{value:0},uSheen:{value:0},uGlow:{value:new THREE.Color('#8ea2ff')},uCrease:{value:crease},uDim:{value:1}};
+    const m=new THREE.ShaderMaterial({uniforms:u,
+      vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+      fragmentShader:`uniform sampler2D tA;uniform sampler2D tB;uniform float uMix;uniform float uSheen;uniform vec3 uGlow;uniform float uCrease;uniform float uDim;varying vec2 vUv;
+      void main(){float d=vUv.y*.82+vUv.x*.18;float p=1.-uMix*1.25+.05;float m=smoothstep(p-.06,p+.06,d);
+        vec3 a=texture2D(tA,vUv).rgb;vec3 b=texture2D(tB,vec2(vUv.x,vUv.y+(1.-m)*.02)).rgb;vec3 col=mix(a,b,m);
+        float line=exp(-pow((d-p)/.018,2.))*step(.001,uMix)*step(uMix,.999);col+=uGlow*line*.9;
+        col+=vec3(smoothstep(0.,.35,1.-abs(vUv.x+vUv.y*.6-uSheen))*.05);
+        if(uCrease>-.5){float e=uCrease>.5?vUv.x:1.-vUv.x;col*=.72+.28*smoothstep(0.,.05,e);}
+        gl_FragColor=vec4(col*uDim,1.);}`});
+    m.userData.u=u;return m;
+  }
+  const outerMat=screenMat(-1),leftMat=screenMat(0),rightMat=screenMat(1);
+  // outer display (front half, outside)
+  const outer=new THREE.Mesh(cornerRect(SW,SH,.085,.085),outerMat);outer.position.set(W/2,0,T+.0014);hinge.add(outer);
+  const hole=new THREE.Mesh(new THREE.CircleGeometry(.017,32),new THREE.MeshBasicMaterial({color:0x000000}));hole.position.set(W/2,SH/2-.04,T+.002);hinge.add(hole);
+  // inner display: two panels meeting at the spine
+  const gap=.004,IW=W-gap-.034,IH=H-.066;
+  const left=new THREE.Mesh(cornerRect(IW,IH,.07,.004),leftMat);left.rotation.y=Math.PI;left.position.set(gap+IW/2,0,-.0012);hinge.add(left);
+  const right=new THREE.Mesh(cornerRect(IW,IH,.004,.07),rightMat);right.position.set(-W/2+gap+IW/2,0,.0012);device.add(right);
+  // back: camera plateau, lenses, flash, mark
+  const plate=new THREE.Mesh(new RoundedBoxGeometry(.4,.24,.026,6,.012),new THREE.MeshPhysicalMaterial({color:0x2e3446,metalness:.9,roughness:.22,clearcoat:1}));
+  plate.position.set(W/2-.26,H/2-.18,-T-.011);device.add(plate);
   const lensMat=new THREE.MeshPhysicalMaterial({color:0x05060a,metalness:.2,roughness:.05,clearcoat:1,iridescence:1,iridescenceThicknessRange:[200,600]});
-  [[-.075,.075],[.075,-.075],[-.075,-.075]].forEach(([x,y])=>{const l=new THREE.Mesh(new THREE.CylinderGeometry(.052,.056,.03,40),lensMat);l.rotation.x=Math.PI/2;l.position.set(bump.position.x+x,bump.position.y+y,-D/2-.034);phone.add(l)});
-  const mark=new THREE.Mesh(roundRect(.16,.16,.05),new THREE.MeshPhysicalMaterial({color:0x8ea2ff,metalness:1,roughness:.2,iridescence:1}));mark.position.set(0,0,-D/2-.0008);mark.rotation.y=Math.PI;phone.add(mark);
+  const ringMat=new THREE.MeshPhysicalMaterial({color:0x8a90a3,metalness:1,roughness:.2});
+  [-.12,0,.12].forEach(x=>{const r=new THREE.Mesh(new THREE.CylinderGeometry(.052,.052,.012,40),ringMat);r.rotation.x=Math.PI/2;r.position.set(plate.position.x+x,plate.position.y,-T-.028);device.add(r);
+    const l=new THREE.Mesh(new THREE.CylinderGeometry(.042,.042,.014,40),lensMat);l.rotation.x=Math.PI/2;l.position.set(plate.position.x+x,plate.position.y,-T-.03);device.add(l)});
+  const flash=new THREE.Mesh(new THREE.CircleGeometry(.016,24),new THREE.MeshBasicMaterial({color:0xfff1dc}));flash.rotation.y=Math.PI;flash.position.set(plate.position.x+.12,plate.position.y-.09,-T-.0245);device.add(flash);
+  const mark=new THREE.Mesh(cornerRect(.13,.13,.04,.04),new THREE.MeshPhysicalMaterial({color:0x8ea2ff,metalness:1,roughness:.2,iridescence:1}));mark.rotation.y=Math.PI;mark.position.set(0,-.1,-T-.0008);device.add(mark);
+  // side buttons on the fixed half
+  const btnMat=new THREE.MeshPhysicalMaterial({color:0x3a3f4d,metalness:.9,roughness:.3});
+  [[.38,.15],[.18,.1]].forEach(([y,h])=>{const b=new THREE.Mesh(new RoundedBoxGeometry(.012,h,.022,4,.005),btnMat);b.position.set(W/2+.004,y,-T/2);device.add(b)});
 
-  SHOTS.forEach((src,i)=>{tex[i]=loader.load(src,t=>{t.anisotropy=maxAniso;t.needsUpdate=true});tex[i].colorSpace=THREE.NoColorSpace;tex[i].anisotropy=maxAniso});
-  SU.tA.value=tex[window.__phone.step||0];
+  // screen content + transitions
+  const tweens=new Map();
+  function show(mat,t,glow){const u=mat.userData.u;if(u.tA.value===t&&!tweens.get(mat))return;
+    const old=tweens.get(mat);if(old){old.kill();u.tA.value=u.tB.value;u.uMix.value=0}
+    u.tB.value=t;u.uGlow.value.set(glow);
+    if(!window.gsap){u.tA.value=t;return}
+    tweens.set(mat,gsap.to(u.uMix,{value:1,duration:1,ease:'power2.inOut',onComplete(){u.tA.value=t;u.uMix.value=0;tweens.delete(mat)}}));
+  }
+  let current=-1,kick=0;
+  function setScreens(i){
+    if(i===current)return;const first=current<0;current=i;
+    const g=GLOWS[i],n=(i+1)%SHOTS.length;
+    if(first){[outerMat,leftMat].forEach(m=>{m.userData.u.tA.value=tex[i]});rightMat.userData.u.tA.value=tex[n];return}
+    show(outerMat,tex[i],g);show(leftMat,tex[i],g);setTimeout(()=>show(rightMat,tex[n],g),120);kick=Math.random()>.5?1:-1;
+  }
+  setScreens(window.__phone.step||0);
+  window.__phone.onStep=setScreens;
 
-  // transitions
-  let current=window.__phone.step||0,anim=null,kick=0;
-  window.__phone.onStep=i=>{
-    if(i===current)return;
-    if(anim){anim.kill();SU.tA.value=SU.tB.value;SU.uMix.value=0}
-    SU.tB.value=tex[i];SU.uGlow.value.set(GLOWS[i]);current=i;kick=(Math.random()>.5?1:-1);
-    const o={v:0};anim=window.gsap?gsap.to(SU.uMix,{value:1,duration:reduce?.01:1.0,ease:'power2.inOut',onComplete(){SU.tA.value=tex[i];SU.uMix.value=0;anim=null}}):null;
-    if(!anim){SU.tA.value=tex[i]}
-  };
+  // fold / unfold
+  const fold={v:0};let isOpen=false;const btn=document.getElementById('fold-btn');
+  function setOpen(o){
+    isOpen=o;if(btn){btn.classList.toggle('open',o);const l=btn.querySelector('span');l.dataset.i18n=o?'case.fold':'case.unfold';l.textContent=I18N[LANG][l.dataset.i18n]}
+    if(window.gsap)gsap.to(fold,{v:o?1:0,duration:1.5,ease:'power3.inOut',overwrite:true});else fold.v=o?1:0;
+  }
+  window.__phone.toggle=()=>setOpen(!isOpen);
+  if(btn)btn.addEventListener('click',()=>setOpen(!isOpen));
+  let userTouched=false;if(btn)btn.addEventListener('click',()=>{userTouched=true});
+  // one-time demo: unfold when the section first comes into view, then fold back
+  new IntersectionObserver((es,ob)=>{es.forEach(e=>{if(e.isIntersecting&&e.intersectionRatio>=.55){ob.disconnect();
+    setTimeout(()=>{if(!userTouched)setOpen(true)},900);setTimeout(()=>{if(!userTouched)setOpen(false)},4200)}})},{threshold:.6}).observe(host);
 
-  // drag with spring back to the front
+  // drag to spin (springs back to the front), tap to fold/unfold
   let dragY=0,dragX=0,vel=0,dragging=false;
-  dragger(renderer.domElement,(dx,dy)=>{dragging=true;dragY+=dx*.012;dragX+=dy*.006;vel=dx*.012},()=>{dragging=false});
+  dragger(renderer.domElement,(dx,dy)=>{dragging=true;dragY+=dx*.012;dragX+=dy*.006;vel=dx*.012},()=>{dragging=false},()=>{userTouched=true;setOpen(!isOpen)});
 
-  let layout={y:0,s:1};
+  let view={visH:1,visW:1,narrow:false};
   function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
-    const visH=2*camera.position.z*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),visW=visH*camera.aspect;
-    const narrow=innerWidth<=860;const target=narrow?.5:.74;let s=(visH*target)/H;s=Math.min(s,(visW*.8)/W);
-    layout={s,y:narrow?visH*.17:0}}
+    const visH=2*camera.position.z*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));view={visH,visW:visH*camera.aspect,narrow:innerWidth<=860}}
   new ResizeObserver(resize).observe(host);resize();
 
   const clock=new THREE.Clock();let rotY=0,rotX=0;
   visibleLoop(host,()=>{
-    const t=clock.getElapsedTime(),p=window.__phone.progress||0;
+    const t=clock.getElapsedTime(),p=window.__phone.progress||0,o=fold.v;
     if(!dragging){vel*=.92;dragY+=vel;const tgt=Math.round(dragY/(Math.PI*2))*Math.PI*2;dragY+=(tgt-dragY)*.035;dragX+=(0-dragX)*.06}
     kick*=.94;
-    const baseY=reduce?-.25:(-.55+p*1.1)+Math.sin(t*.5)*.08;
-    rotY+=((baseY+dragY+kick*.35)-rotY)*.12;rotX+=((reduce?0:Math.sin(t*.7)*.05)+dragX-.04-rotX)*.12;
+    hinge.rotation.y=-Math.PI*o;
+    device.position.x=(W/2)*o;
+    left.visible=right.visible=o>.01;
+    const lift=Math.sin(o*Math.PI);           // extra flourish mid-fold
+    const baseY=((-.55+p*1.1)+Math.sin(t*.5)*.08)*(1-o*.65)+lift*.35;
+    rotY+=((baseY+dragY+kick*.35)-rotY)*.12;rotX+=((Math.sin(t*.7)*.05)+dragX-.04-lift*.12-rotX)*.12;
     pivot.rotation.set(rotX,rotY,kick*.05);
-    pivot.position.y=layout.y+(reduce?0:Math.sin(t*.9)*.03);pivot.scale.setScalar(layout.s);
-    SU.uSheen.value=.4+rotY*.8;
+    const target=view.narrow?.5:.68,frac=view.narrow?.92:.84;
+    const s=Math.min(view.visH*target/H,view.visW*frac/(W*(1+o)));
+    pivot.scale.setScalar(s);
+    pivot.position.y=(view.narrow?view.visH*.17:view.visH*.035)+Math.sin(t*.9)*.03;
+    const sh=.4+rotY*.8;[outerMat,leftMat,rightMat].forEach(m=>m.userData.u.uSheen.value=sh);
     renderer.render(scene,camera);
   });
+}
+
+function cornerRect(w,h,rl,rr,raw){ // rounded rect with separate left/right corner radii, UVs 0..1
+  const s=new THREE.Shape(),x=-w/2,y=-h/2;
+  s.moveTo(x+rl,y);s.lineTo(x+w-rr,y);s.quadraticCurveTo(x+w,y,x+w,y+rr);s.lineTo(x+w,y+h-rr);s.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+  s.lineTo(x+rl,y+h);s.quadraticCurveTo(x,y+h,x,y+h-rl);s.lineTo(x,y+rl);s.quadraticCurveTo(x,y,x+rl,y);
+  if(raw===undefined||raw===false){const g=new THREE.ShapeGeometry(s,20);const uv=g.attributes.uv,ps=g.attributes.position;
+    for(let i=0;i<uv.count;i++)uv.setXY(i,(ps.getX(i)+w/2)/w,(ps.getY(i)+h/2)/h);return g}
+  if(raw===true){return new THREE.ShapeGeometry(s,20)}
+  return s;
 }
 
 function roundRect(w,h,r){
